@@ -85,9 +85,20 @@ macro(__TEST_BIG_ENDIAN_LEGACY_IMPL VARIABLE)
     file(READ "${CMAKE_ROOT}/Modules/TestEndianess.c.in" TEST_ENDIANESS_FILE_CONTENT)
     string(CONFIGURE "${TEST_ENDIANESS_FILE_CONTENT}" TEST_ENDIANESS_FILE_CONTENT @ONLY)
 
+    # (Patched) Disable Brioche autopack so endianness check works
+    if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+      set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+    endif()
+    set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
      try_compile(HAVE_${VARIABLE}
       SOURCE_FROM_VAR "${_test_file}" TEST_ENDIANESS_FILE_CONTENT
       COPY_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/TestEndianess.bin" )
+
+    if(DEFINED old_brioche_ld_autopack)
+      set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+    endif()
+    unset(old_brioche_ld_autopack)
 
       if(HAVE_${VARIABLE})
 
