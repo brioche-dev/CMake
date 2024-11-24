@@ -2852,6 +2852,49 @@ static std::string::size_type cmSystemToolsFindRPath(
   return std::string::npos;
 }
 
+static cm::optional<bool> GetBriochePackSourcePath(std::string const& file,
+                                                   std::string* sourceFile,
+                                                   std::string* emsg)
+{
+  const std::array<uint8_t, 32> expected_marker = {'b', 'r', 'i', 'o', 'c', 'h', 'e', '_', 'p', 'a', 'c', 'k', '_', 'v', '0', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+
+  std::ifstream fstream(file, std::ifstream::binary);
+  if (!fstream) {
+    return nullptr;
+  }
+
+  std::array<uint8_t, 32> marker = {0};
+  fstream.seekg(-marker.size());
+  if (!fstream) {
+    return nullptr;
+  }
+
+  fstream.read(reinterpret_cast<char*>(&marker[0]), marker.size());
+  if (!fstream) {
+    return nullptr;
+  }
+
+  if (marker != expected_marker) {
+    return nullptr;
+  }
+
+  std::string source_path;
+  std::string source_path_error;
+  int source_path_ret;
+  std::vector<std::string> source_path_command = {"brioche-packer", "source-path", file};
+  cmSystemTools::RunSingleCommand(source_path_command, &source_path, &source_path_error, &source_path_ret);
+  if (source_path_ret != 0) {
+    if (emsg) {
+      *emsg = cmStrCat("Error getting Brioche packed source path: ", source_path_error);
+    }
+
+    return false;
+  }
+
+  *sourceFile = source_path;
+  return true;
+}
+
 namespace {
 struct cmSystemToolsRPathInfo
 {
@@ -3189,12 +3232,19 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
                                 bool removeEnvironmentRPath, std::string* emsg,
                                 bool* changed)
 {
+  std::string source_file = file;
+  if (cm::optional<bool> result = GetBriochePackSourcePath(file, &source_file, emsg)) {
+    if (!result.value()) {
+      return false;
+    }
+  }
+
   if (cm::optional<bool> result = ChangeRPathELF(
-        file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
+        source_file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
     return result.value();
   }
   if (cm::optional<bool> result = ChangeRPathXCOFF(
-        file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
+        source_file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
     return result.value();
   }
   // The file format is not recognized.  Assume it has no RPATH.
@@ -3212,11 +3262,18 @@ bool cmSystemTools::SetRPath(std::string const& file,
                              std::string const& newRPath, std::string* emsg,
                              bool* changed)
 {
-  if (cm::optional<bool> result = SetRPathELF(file, newRPath, emsg, changed)) {
+  std::string source_file = file;
+  if (cm::optional<bool> result = GetBriochePackSourcePath(file, &source_file, emsg)) {
+    if (!result.value()) {
+      return false;
+    }
+  }
+
+  if (cm::optional<bool> result = SetRPathELF(source_file, newRPath, emsg, changed)) {
     return result.value();
   }
   if (cm::optional<bool> result =
-        SetRPathXCOFF(file, newRPath, emsg, changed)) {
+        SetRPathXCOFF(source_file, newRPath, emsg, changed)) {
     return result.value();
   }
   // The file format is not recognized.  Assume it has no RPATH.
@@ -3571,6 +3628,13 @@ static cm::optional<bool> RemoveRPathXCOFF(std::string const& file,
 bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
                                 bool* removed)
 {
+  std::string source_file = file;
+  if (cm::optional<bool> result = GetBriochePackSourcePath(file, &source_file, emsg)) {
+    if (!result.value()) {
+      return false;
+    }
+  }
+
   if (cm::optional<bool> result = RemoveRPathELF(file, emsg, removed)) {
     return result.value();
   }
@@ -3584,8 +3648,15 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
 bool cmSystemTools::CheckRPath(std::string const& file,
                                std::string const& newRPath)
 {
+  std::string source_file = file;
+  if (cm::optional<bool> result = GetBriochePackSourcePath(file, &source_file, nullptr)) {
+    if (!result.value()) {
+      return false;
+    }
+  }
+
   // Parse the ELF binary.
-  cmELF elf(file.c_str());
+  cmELF elf(source_file.c_str());
   if (elf) {
     // Get the RPATH or RUNPATH entry from it.
     cmELF::StringEntry const* se = elf.GetRPath();
@@ -3608,7 +3679,7 @@ bool cmSystemTools::CheckRPath(std::string const& file,
   }
 #if defined(CMake_USE_XCOFF_PARSER)
   // Parse the XCOFF binary.
-  cmXCOFF xcoff(file.c_str());
+  cmXCOFF xcoff(source_file.c_str());
   if (xcoff) {
     if (cm::optional<cm::string_view> libPath = xcoff.GetLibPath()) {
       if (cmSystemToolsFindRPath(*libPath, newRPath) != std::string::npos) {
