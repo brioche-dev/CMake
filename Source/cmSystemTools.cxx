@@ -2860,22 +2860,22 @@ static cm::optional<bool> GetBriochePackSourcePath(std::string const& file,
 
   std::ifstream fstream(file, std::ifstream::binary);
   if (!fstream) {
-    return nullptr;
+    return cm::nullopt;
   }
 
   std::array<uint8_t, 32> marker = {0};
   fstream.seekg(-marker.size());
   if (!fstream) {
-    return nullptr;
+    return cm::nullopt;
   }
 
   fstream.read(reinterpret_cast<char*>(&marker[0]), marker.size());
   if (!fstream) {
-    return nullptr;
+    return cm::nullopt;
   }
 
   if (marker != expected_marker) {
-    return nullptr;
+    return cm::nullopt;
   }
 
   std::string source_path;
