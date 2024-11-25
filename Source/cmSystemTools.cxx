@@ -2898,6 +2898,14 @@ static cm::optional<bool> GetBriochePackSourcePath(std::string const& file,
     return false;
   }
 
+  // Remove trailing \n or \r\n from output if present
+  if (!source_path.empty() && source_path[source_path.length() - 1] == '\n') {
+    source_path.erase(source_path.length() - 1);
+  }
+  if (!source_path.empty() && source_path[source_path.length() - 1] == '\r') {
+    source_path.erase(source_path.length() - 1);
+  }
+
   *sourceFile = source_path;
   return true;
 }
