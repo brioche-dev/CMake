@@ -2906,7 +2906,19 @@ static cm::optional<bool> GetBriochePackSourcePath(std::string const& file,
     source_path.erase(source_path.length() - 1);
   }
 
-  *sourceFile = source_path;
+  std::string real_path_error;
+  std::string real_source_path = cmSystemTools::GetRealPath(source_path, &real_path_error);
+
+  // Return an error if we couldn't resolve the real path
+  if (real_source_path.empty()) {
+    if (emsg) {
+      *emsg = real_path_error;
+    }
+
+    return false;
+  }
+
+  *sourceFile = real_source_path;
   return true;
 }
 
