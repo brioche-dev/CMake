@@ -2864,7 +2864,14 @@ static cm::optional<bool> GetBriochePackSourcePath(std::string const& file,
   }
 
   std::array<uint8_t, 32> marker = {0};
-  fstream.seekg(-marker.size());
+  fstream.seekg(0, std::ios::end);
+  int file_length = fstream.tellg();
+  int marker_start_offset = file_length - marker.size();
+  if (marker_start_offset < 0) {
+     return cm::nullopt;
+  }
+
+  fstream.seekg(marker_start_offset, std::ios::beg);
   if (!fstream) {
     return cm::nullopt;
   }
