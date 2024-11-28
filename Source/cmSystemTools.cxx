@@ -2863,6 +2863,47 @@ struct BriochePackInfo {
   std::string real_source_path;
 };
 
+static cm::optional<std::string> CurrentCommandDir() {
+#if defined(__linux__)
+  char buffer[PATH_MAX] = {0};
+  int read_length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+  if (read_length == -1) {
+    fprintf(stderr, "failed to find path to brioche-packer: could not read /proc/self/exe\n");
+    return cm::nullopt;
+  }
+
+  std::string command_path = std::string(buffer, read_length);
+  size_t split_pos = command_path.find_last_of("/");
+  if (split_pos == std::string::npos) {
+    fprintf(stderr, "failed to find path to brioche-packer: could not find directory conaining executable\n");
+    return cm::nullopt;
+  }
+
+  return command_path.substr(0, split_pos);
+#else
+  fprintf(stderr, "failed to find path to brioche-packer: platform not supported\n");
+  return cm::nullopt;
+#endif
+}
+
+static std::string BriochePackerCommand() {
+  cm::optional<std::string> command_dir = CurrentCommandDir();
+  if (!command_dir) {
+    return "brioche-packer";
+  }
+
+  std::ostringstream command;
+  command << *command_dir << "/../libexec/cmake/brioche-packer";
+
+  std::string real_command_error;
+  std::string real_command = cmSystemTools::GetRealPath(command.str(), &real_command_error);
+  if (real_command.empty()) {
+    fprintf(stderr, "failed to get realpath to brioche-packer: %s\n", real_command_error.c_str());
+    return "brioche-packer";
+  }
+  return real_command;
+}
+
 static cm::optional<BriochePackInfo> GetBriochePackInfo(std::string const& file,
                                                         std::string* emsg)
 {
@@ -2901,7 +2942,7 @@ static cm::optional<BriochePackInfo> GetBriochePackInfo(std::string const& file,
   std::string source_path;
   std::string source_path_error;
   int source_path_ret;
-  std::vector<std::string> source_path_command = {"brioche-packer", "source-path", file};
+  std::vector<std::string> source_path_command = {BriochePackerCommand(), "source-path", file};
   cmSystemTools::RunSingleCommand(source_path_command,
                                   &source_path,
                                   &source_path_error,
@@ -2955,7 +2996,7 @@ static bool FinishEdit(cm::optional<BriochePackInfo> &pack_info,
   std::string update_source_error;
   int update_source_ret;
   std::vector<std::string> update_source_command = {
-    "brioche-packer",
+    BriochePackerCommand(),
     "update-source",
     pack_info->packed_path,
     "--new-source",
