@@ -2878,7 +2878,7 @@ static cm::optional<BriochePackInfo> GetBriochePackInfo(std::string const& file,
   int file_length = fstream.tellg();
   int marker_start_offset = file_length - marker.size();
   if (marker_start_offset < 0) {
-     return cm::nullopt;
+    return cm::nullopt;
   }
 
   fstream.seekg(marker_start_offset, std::ios::beg);
@@ -2902,7 +2902,12 @@ static cm::optional<BriochePackInfo> GetBriochePackInfo(std::string const& file,
   std::string source_path_error;
   int source_path_ret;
   std::vector<std::string> source_path_command = {"brioche-packer", "source-path", file};
-  cmSystemTools::RunSingleCommand(source_path_command, &source_path, &source_path_error, &source_path_ret);
+  cmSystemTools::RunSingleCommand(source_path_command,
+                                  &source_path,
+                                  &source_path_error,
+                                  &source_path_ret,
+                                  nullptr,
+                                  cmSystemTools::OUTPUT_NONE);
   if (source_path_ret != 0) {
     if (emsg) {
       *emsg = cmStrCat("Error getting Brioche packed source path: ", source_path_error);
@@ -2947,20 +2952,24 @@ static bool FinishEdit(cm::optional<BriochePackInfo> &pack_info,
     return true;
   }
 
-  std::string source_path;
-  std::string source_path_error;
-  int source_path_ret;
-  std::vector<std::string> source_path_command = {
+  std::string update_source_error;
+  int update_source_ret;
+  std::vector<std::string> update_source_command = {
     "brioche-packer",
     "update-source",
     pack_info->packed_path,
     "--new-source",
     source_file
   };
-  cmSystemTools::RunSingleCommand(source_path_command, &source_path_error, &source_path_error, &source_path_ret);
-  if (source_path_ret != 0) {
+  cmSystemTools::RunSingleCommand(update_source_command,
+                                  &update_source_error,
+                                  &update_source_error,
+                                  &update_source_ret,
+                                  nullptr,
+                                  cmSystemTools::OUTPUT_NONE);
+  if (update_source_ret != 0) {
     if (emsg) {
-      *emsg = cmStrCat("Error getting Brioche packed source path: ", source_path_error);
+      *emsg = cmStrCat("Error applying update to Brioche pack: ", update_source_error);
     }
 
     return false;
