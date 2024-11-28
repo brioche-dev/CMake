@@ -3316,6 +3316,15 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
     std::ostringstream source_file_copy;
     source_file_copy << brioche_pack_info->real_source_path << ".tmp" << cmSystemTools::RandomSeed();
     source_file = source_file_copy.str();
+
+    cmSystemTools::CopyResult copyResult = cmSystemTools::CopySingleFile(brioche_pack_info->real_source_path,
+                                                                         source_file,
+                                                                         cmSystemTools::CopyWhen::Always,
+                                                                         cmSystemTools::CopyInputRecent::Yes,
+                                                                         emsg);
+    if (copyResult != cmSystemTools::CopyResult::Success) {
+      return false;
+    }
   }
 
   if (cm::optional<bool> result = ChangeRPathELF(
@@ -3351,6 +3360,15 @@ bool cmSystemTools::SetRPath(std::string const& file,
     std::ostringstream source_file_copy;
     source_file_copy << brioche_pack_info->real_source_path << ".tmp" << cmSystemTools::RandomSeed();
     source_file = source_file_copy.str();
+
+    cmSystemTools::CopyResult copyResult = cmSystemTools::CopySingleFile(brioche_pack_info->real_source_path,
+                                                                         source_file,
+                                                                         cmSystemTools::CopyWhen::Always,
+                                                                         cmSystemTools::CopyInputRecent::Yes,
+                                                                         emsg);
+    if (copyResult != cmSystemTools::CopyResult::Success) {
+      return false;
+    }
   }
 
   if (cm::optional<bool> result = SetRPathELF(source_file, newRPath, emsg, changed)) {
@@ -3722,6 +3740,15 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
     std::ostringstream source_file_copy;
     source_file_copy << brioche_pack_info->real_source_path << ".tmp" << cmSystemTools::RandomSeed();
     source_file = source_file_copy.str();
+
+    cmSystemTools::CopyResult copyResult = cmSystemTools::CopySingleFile(brioche_pack_info->real_source_path,
+                                                                         source_file,
+                                                                         cmSystemTools::CopyWhen::Always,
+                                                                         cmSystemTools::CopyInputRecent::Yes,
+                                                                         emsg);
+    if (copyResult != cmSystemTools::CopyResult::Success) {
+      return false;
+    }
   }
 
   if (cm::optional<bool> result = RemoveRPathELF(file, emsg, removed)) {
