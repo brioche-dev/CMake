@@ -182,6 +182,13 @@ macro(KWSYS_PLATFORM_INFO_TEST lang var description)
     # Compile the test binary.
     if(NOT EXISTS ${KWSYS_PLATFORM_INFO_FILE})
       message(STATUS "${description}")
+
+      # (Patched) Disable Brioche autopack
+      if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+        set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+      endif()
+      set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
       try_compile(${var}_COMPILED
         ${CMAKE_CURRENT_BINARY_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/${KWSYS_PLATFORM_TEST_FILE_${lang}}
@@ -191,6 +198,12 @@ macro(KWSYS_PLATFORM_INFO_TEST lang var description)
         OUTPUT_VARIABLE OUTPUT
         COPY_FILE ${KWSYS_PLATFORM_INFO_FILE}
         )
+
+      if(DEFINED old_brioche_ld_autopack)
+        set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+        unset(old_brioche_ld_autopack)
+      endif()
+
       if(CMAKE_VERSION VERSION_LESS 3.26)
         if(${var}_COMPILED)
           file(APPEND

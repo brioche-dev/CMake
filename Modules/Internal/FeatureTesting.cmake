@@ -31,6 +31,12 @@ macro(_record_compiler_features lang compile_flags feature_list)
     set(compile_flags_for_link "")
   endif()
 
+  # (Patched) Disable Brioche autopack
+  if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+    set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+  endif()
+  set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
   try_compile(CMAKE_${lang}_FEATURE_TEST
     SOURCE_FROM_VAR "feature_tests.${lang_lc}" _content
     COMPILE_DEFINITIONS "${compile_flags}"
@@ -49,6 +55,11 @@ macro(_record_compiler_features lang compile_flags feature_list)
   endif()
   unset(CMAKE_${lang}_FEATURE_TEST CACHE)
   unset(compile_flags_for_link)
+
+  if(DEFINED old_brioche_ld_autopack)
+    set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+    unset(old_brioche_ld_autopack)
+  endif()
 
   if (_result EQUAL 0)
     if(EXISTS "${CMAKE_BINARY_DIR}/CMakeFiles/feature_tests.bin")

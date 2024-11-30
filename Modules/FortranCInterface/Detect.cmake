@@ -44,6 +44,12 @@ else()
 endif()
 unset(_FortranCInterface_CMP0056)
 
+# (Patched) Disable Brioche autopack
+if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+  set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+endif()
+set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
 # Build a sample project which reports symbols.
 set(CMAKE_TRY_COMPILE_CONFIGURATION Release)
 try_compile(FortranCInterface_COMPILED
@@ -64,6 +70,11 @@ set(FortranCInterface_COMPILED ${FortranCInterface_COMPILED})
 unset(FortranCInterface_COMPILED CACHE)
 unset(_FortranCInterface_EXE_LINKER_FLAGS)
 unset(_FortranCInterface_OSX_ARCH)
+
+if(DEFINED old_brioche_ld_autopack)
+  set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+  unset(old_brioche_ld_autopack)
+endif()
 
 # Locate the sample project executable.
 set(FortranCInterface_EXE)

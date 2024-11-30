@@ -62,6 +62,12 @@ function(CMAKE_DETERMINE_COMPILER_ABI lang src)
       string(REGEX REPLACE "(^| )-Werror([= ][^-][^ ]*)?( |$)" " " ${v} "${${v}}")
     endforeach()
 
+    # (Patched) Disable Brioche autopack
+    if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+      set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+    endif()
+    set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
     # Save the current LC_ALL, LC_MESSAGES, and LANG environment variables
     # and set them to "C" that way GCC's "search starts here" text is in
     # English and we can grok it.
@@ -87,6 +93,11 @@ function(CMAKE_DETERMINE_COMPILER_ABI lang src)
     set(ENV{LC_ALL}      ${_orig_lc_all})
     set(ENV{LC_MESSAGES} ${_orig_lc_messages})
     set(ENV{LANG}        ${_orig_lang})
+
+    if(DEFINED old_brioche_ld_autopack)
+      set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+      unset(old_brioche_ld_autopack)
+    endif()
 
     # Move result from cache to normal variable.
     set(CMAKE_${lang}_ABI_COMPILED ${CMAKE_${lang}_ABI_COMPILED})

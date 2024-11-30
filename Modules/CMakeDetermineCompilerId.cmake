@@ -4,6 +4,12 @@
 macro(__determine_compiler_id_test testflags_var userflags_var)
   set(_CMAKE_${lang}_COMPILER_ID_LOG "")
 
+  # (Patched) Disable Brioche autopack
+  if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+    set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+  endif()
+  set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
   separate_arguments(testflags UNIX_COMMAND "${${testflags_var}}")
   CMAKE_DETERMINE_COMPILER_ID_BUILD("${lang}" "${testflags}" "${${userflags_var}}" "${src}")
   CMAKE_DETERMINE_COMPILER_ID_MATCH_VENDOR("${lang}" "${COMPILER_${lang}_PRODUCED_OUTPUT}")
@@ -12,6 +18,11 @@ macro(__determine_compiler_id_test testflags_var userflags_var)
     foreach(file ${COMPILER_${lang}_PRODUCED_FILES})
       CMAKE_DETERMINE_COMPILER_ID_CHECK("${lang}" "${CMAKE_${lang}_COMPILER_ID_DIR}/${file}" "${src}")
     endforeach()
+  endif()
+
+  if(DEFINED old_brioche_ld_autopack)
+    set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+    unset(old_brioche_ld_autopack)
   endif()
 
   message(CONFIGURE_LOG "${_CMAKE_${lang}_COMPILER_ID_LOG}")

@@ -149,6 +149,12 @@ function(__check_type_size_impl type var map builtin language)
     set(_CTS_LINK_DIRECTORIES)
   endif()
 
+  # (Patched) Disable Brioche autopack
+  if(DEFINED ENV{BRIOCHE_LD_AUTOPACK})
+  set(old_brioche_ld_autopack $ENV{BRIOCHE_LD_AUTOPACK})
+  endif()
+  set(ENV{BRIOCHE_LD_AUTOPACK} "false")
+
   # Perform the check.
   set(bin ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CheckTypeSize/${var}.bin)
   file(READ ${__check_type_size_dir}/CheckTypeSize.c.in src_content)
@@ -164,6 +170,11 @@ function(__check_type_size_impl type var map builtin language)
     COPY_FILE ${bin}
     )
   unset(_CTS_LINK_DIRECTORIES)
+
+  if(DEFINED old_brioche_ld_autopack)
+    set(ENV{BRIOCHE_LD_AUTOPACK} ${old_brioche_ld_autopack})
+    unset(old_brioche_ld_autopack)
+  endif()
 
   if(HAVE_${var})
     # The check compiled.  Load information from the binary.
