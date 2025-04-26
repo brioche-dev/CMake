@@ -1,5 +1,5 @@
 /* Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-   file Copyright.txt or https://cmake.org/licensing for details.  */
+   file LICENSE.rst or https://cmake.org/licensing for details.  */
 #include "cmCurl.h"
 
 #include <cm/string_view>
@@ -111,7 +111,7 @@ cm::optional<std::string> cmCurlPrintTLSVersion(int curl_tls_version)
   return s;
 }
 
-std::string cmCurlSetCAInfo(::CURL* curl, const std::string& cafile)
+std::string cmCurlSetCAInfo(::CURL* curl, std::string const& cafile)
 {
   std::string e;
   std::string env_ca;
@@ -161,16 +161,25 @@ std::string cmCurlSetCAInfo(::CURL* curl, const std::string& cafile)
     }
 #    undef CMAKE_CAPATH_AIX
 #  endif
+#  ifdef __sun
+#    define CMAKE_CAPATH_SUNOS_CSW "/etc/opt/csw/ssl/certs"
+    if (cmSystemTools::FileIsDirectory(CMAKE_CAPATH_SUNOS_CSW)) {
+      ::CURLcode res =
+        ::curl_easy_setopt(curl, CURLOPT_CAPATH, CMAKE_CAPATH_SUNOS_CSW);
+      check_curl_result(res, "Unable to set TLS/SSL Verify CAPATH: ");
+    }
+#    undef CMAKE_CAPATH_SUNOS_CSW
+#  endif
   }
 #endif
   return e;
 }
 
-std::string cmCurlSetNETRCOption(::CURL* curl, const std::string& netrc_level,
-                                 const std::string& netrc_file)
+std::string cmCurlSetNETRCOption(::CURL* curl, std::string const& netrc_level,
+                                 std::string const& netrc_file)
 {
   std::string e;
-  CURL_NETRC_OPTION curl_netrc_level = CURL_NETRC_LAST;
+  long curl_netrc_level = CURL_NETRC_LAST;
   ::CURLcode res;
 
   if (!netrc_level.empty()) {

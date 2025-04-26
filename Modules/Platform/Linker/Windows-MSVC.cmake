@@ -1,12 +1,9 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# file LICENSE.rst or https://cmake.org/licensing for details.
 
 
 # This module is shared by multiple languages; use include blocker.
 include_guard()
-
-block(SCOPE_FOR POLICIES)
-cmake_policy(SET CMP0054 NEW)
 
 # Features for LINK_LIBRARY generator expression
 if(MSVC_VERSION GREATER "1900")
@@ -17,6 +14,7 @@ if(MSVC_VERSION GREATER "1900")
 endif()
 
 macro(__windows_linker_msvc lang)
+  set(CMAKE_${lang}_PLATFORM_LINKER_ID MSVC)
   set(CMAKE_${lang}_LINK_LIBRARIES_PROCESSING ORDER=FORWARD DEDUPLICATION=ALL)
 
   # Features for LINK_LIBRARY generator expression
@@ -31,5 +29,3 @@ macro(__windows_linker_msvc lang)
     endif()
   endif()
 endmacro()
-
-endblock()

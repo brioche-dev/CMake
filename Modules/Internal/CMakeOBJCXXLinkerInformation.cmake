@@ -1,5 +1,5 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# file LICENSE.rst or https://cmake.org/licensing for details.
 
 
 # This file sets the basic flags for the linker used by the Objective-C++ compiler in CMake.
@@ -31,7 +31,7 @@ endif()
 
 # We specify the platform linker information in the system file.
 if (NOT _INCLUDED_FILE)
-  include(Platform/Linker/${CMAKE_SYSTEM_NAME}-OBJCXX OPTIONAL)
+  include(Platform/Linker/${CMAKE_EFFECTIVE_SYSTEM_NAME}-OBJCXX OPTIONAL)
 endif ()
 
 _cmake_common_linker_platform_flags(OBJCXX)

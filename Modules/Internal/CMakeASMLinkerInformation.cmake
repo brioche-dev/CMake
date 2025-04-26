@@ -1,5 +1,5 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# file LICENSE.rst or https://cmake.org/licensing for details.
 
 
 # This file sets the basic flags for the linker used by the C compiler in CMake.
@@ -29,7 +29,7 @@ endif()
 
 # We specify the platform linker information in the system file.
 if (NOT _INCLUDED_FILE)
-  include(Platform/Linker/${CMAKE_SYSTEM_NAME}-ASM${ASM_DIALECT} OPTIONAL)
+  include(Platform/Linker/${CMAKE_EFFECTIVE_SYSTEM_NAME}-ASM${ASM_DIALECT} OPTIONAL)
 endif ()
 
 set(CMAKE_ASM${ASM_DIALECT}_LINKER_INFORMATION_LOADED 1)
