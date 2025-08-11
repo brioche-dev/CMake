@@ -48,21 +48,16 @@
 // Do this only for our vendored curl to avoid breaking builds
 // against external future versions of curl.
 #if !defined(CMAKE_USE_SYSTEM_CURL)
+// NOLINTNEXTLINE(misc-redundant-expression)
 static_assert(CURL_SSLVERSION_LAST == 8,
               "A new CURL_SSLVERSION_ may be available!");
 #endif
 
-void cmCurlInitOnce()
+::CURLcode cm_curl_global_init(long flags)
 {
   // curl 7.56.0 introduced curl_global_sslset.
 #if defined(__APPLE__) && defined(CMAKE_USE_SYSTEM_CURL) &&                   \
   defined(LIBCURL_VERSION_NUM) && LIBCURL_VERSION_NUM >= 0x073800
-  static bool initialized = false;
-  if (initialized) {
-    return;
-  }
-  initialized = true;
-
   cm::optional<std::string> curl_ssl_backend =
     cmSystemTools::GetEnvVar("CURL_SSL_BACKEND");
   if (!curl_ssl_backend || curl_ssl_backend->empty()) {
@@ -70,10 +65,27 @@ void cmCurlInitOnce()
     // curl 8.3.0 through 8.5.x did not re-initialize LibreSSL correctly,
     // so prefer the Secure Transport backend by default in those versions.
     if (cv->version_num >= 0x080300 && cv->version_num < 0x080600) {
+#  if defined(__clang__)
+#    define CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#  elif defined(__GNUC__)
+#    define CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_GCC
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  endif
       curl_global_sslset(CURLSSLBACKEND_SECURETRANSPORT, NULL, NULL);
+#  if defined(CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_CLANG)
+#    undef CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_CLANG
+#    pragma clang diagnostic pop
+#  elif defined(CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_GCC)
+#    undef CM_CURL_DEPRECATED_CURLSSLBACKEND_SECURETRANSPORT_GCC
+#    pragma GCC diagnostic pop
+#  endif
     }
   }
 #endif
+  return ::curl_global_init(flags);
 }
 
 cm::optional<int> cmCurlParseTLSVersion(cm::string_view tls_version)
