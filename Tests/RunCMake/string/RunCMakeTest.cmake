@@ -6,6 +6,7 @@ run_cmake(JSONNoJson)
 run_cmake(JSONWrongMode)
 run_cmake(JSONOneArg)
 run_cmake(JSONNoArgs)
+run_cmake(JSONBadJson)
 
 run_cmake(Append)
 run_cmake(AppendNoArgs)
@@ -56,3 +57,5 @@ run_cmake(RepeatNegativeCount)
 run_cmake(Hex)
 run_cmake(HexTooManyArgs)
 run_cmake(HexNotEnoughArgs)
+
+run_cmake(GenexpStrip)

@@ -20,7 +20,6 @@
 #include "cmRange.h"
 #include "cmState.h"
 #include "cmStatePrivate.h"
-#include "cmStateTypes.h"
 #include "cmValue.h"
 
 static std::string const kBINARY_DIR = "BINARY_DIR";
@@ -66,7 +65,7 @@ cmBTStringRange GetPropertyContent(T const& content, U contentEndPosition)
   auto end = content.begin() + contentEndPosition;
 
   auto rbegin = cm::make_reverse_iterator(end);
-  rbegin = std::find(rbegin, content.rend(), cmPropertySentinel);
+  rbegin = std::find(rbegin, content.rend(), cmStateDetail::PropertySentinel);
 
   return cmMakeRange(rbegin.base(), end);
 }
@@ -130,7 +129,7 @@ void cmStateDirectory::PrependIncludeDirectoriesEntry(
 
   auto rend = this->DirectoryState->IncludeDirectories.rend();
   auto rbegin = cm::make_reverse_iterator(entryEnd);
-  rbegin = std::find(rbegin, rend, cmPropertySentinel);
+  rbegin = std::find(rbegin, rend, cmStateDetail::PropertySentinel);
 
   auto entryIt = rbegin.base();
 
@@ -244,7 +243,7 @@ void cmStateDirectory::PrependLinkDirectoriesEntry(const BT<std::string>& vec)
 
   auto rend = this->DirectoryState->LinkDirectories.rend();
   auto rbegin = cm::make_reverse_iterator(entryEnd);
-  rbegin = std::find(rbegin, rend, cmPropertySentinel);
+  rbegin = std::find(rbegin, rend, cmStateDetail::PropertySentinel);
 
   auto entryIt = rbegin.base();
 

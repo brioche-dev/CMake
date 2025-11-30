@@ -375,8 +375,9 @@ CMAKE_CXX_SOURCES="\
   cmFunctionCommand \
   cmFSPermissions \
   cmGeneratedFileStream \
+  cmGenExContext \
+  cmGenExEvaluation \
   cmGeneratorExpression \
-  cmGeneratorExpressionContext \
   cmGeneratorExpressionDAGChecker \
   cmGeneratorExpressionEvaluationFile \
   cmGeneratorExpressionEvaluator \
@@ -454,6 +455,7 @@ CMAKE_CXX_SOURCES="\
   cmOSXBundleGenerator \
   cmOptionCommand \
   cmOrderDirectories \
+  cmObjectLocation \
   cmOutputConverter \
   cmParseArgumentsCommand \
   cmPathLabel \

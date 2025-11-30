@@ -3,6 +3,7 @@
 #include "cmExportInstallCMakeConfigGenerator.h"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -16,6 +17,7 @@
 #include "cmExportFileGenerator.h"
 #include "cmExportSet.h"
 #include "cmFileSet.h"
+#include "cmGenExContext.h"
 #include "cmGeneratedFileStream.h"
 #include "cmGeneratorExpression.h"
 #include "cmGeneratorTarget.h"
@@ -339,13 +341,13 @@ std::string cmExportInstallCMakeConfigGenerator::GetFileSetFiles(
     te->FileSetGenerators.at(fileSet->GetName())->GetDestination());
 
   for (auto const& config : configs) {
-    auto directories = fileSet->EvaluateDirectoryEntries(
-      directoryEntries, gte->LocalGenerator, config, gte);
+    cm::GenEx::Context context(gte->LocalGenerator, config);
+    auto directories =
+      fileSet->EvaluateDirectoryEntries(directoryEntries, context, gte);
 
     std::map<std::string, std::vector<std::string>> files;
     for (auto const& entry : fileEntries) {
-      fileSet->EvaluateFileEntry(directories, files, entry,
-                                 gte->LocalGenerator, config, gte);
+      fileSet->EvaluateFileEntry(directories, files, entry, context, gte);
     }
     auto unescapedDest = destCge->Evaluate(gte->LocalGenerator, config, gte);
     auto dest =

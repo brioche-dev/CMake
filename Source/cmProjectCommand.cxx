@@ -38,6 +38,7 @@ struct ProjectArguments : ArgumentParser::ParseResult
 {
   cm::optional<std::string> Version;
   cm::optional<std::string> CompatVersion;
+  cm::optional<std::string> License;
   cm::optional<std::string> Description;
   cm::optional<std::string> HomepageURL;
   cm::optional<ArgumentParser::MaybeEmpty<std::vector<std::string>>> Languages;
@@ -72,11 +73,12 @@ bool cmProjectCommand(std::vector<std::string> const& args,
     .Bind("LANGUAGES"_s, prArgs.Languages);
 
   cmMakefile& mf = status.GetMakefile();
-  bool enableCompatVersion = cmExperimental::HasSupportEnabled(
+  bool enablePackageInfo = cmExperimental::HasSupportEnabled(
     mf, cmExperimental::Feature::ExportPackageInfo);
 
-  if (enableCompatVersion) {
+  if (enablePackageInfo) {
     parser.Bind("COMPAT_VERSION"_s, prArgs.CompatVersion);
+    parser.Bind("SPDX_LICENSE"_s, prArgs.License);
   }
 
   if (args.empty()) {
@@ -202,6 +204,7 @@ bool cmProjectCommand(std::vector<std::string> const& args,
   std::string version_string;
   std::array<std::string, MAX_VERSION_COMPONENTS> version_components;
 
+  bool has_version = prArgs.Version.has_value();
   if (prArgs.Version) {
     if (!vx.find(*prArgs.Version)) {
       std::string e =
@@ -267,12 +270,42 @@ bool cmProjectCommand(std::vector<std::string> const& args,
     TopLevelCMakeVarCondSet(mf, cmStrCat("CMAKE_PROJECT_"_s, var), val);
   };
 
-  createVariables("VERSION"_s, version_string);
-  createVariables("VERSION_MAJOR"_s, version_components[0]);
-  createVariables("VERSION_MINOR"_s, version_components[1]);
-  createVariables("VERSION_PATCH"_s, version_components[2]);
-  createVariables("VERSION_TWEAK"_s, version_components[3]);
+  // Note, this intentionally doesn't touch cache variables as the legacy
+  // behavior did not modify cache
+  auto checkAndClearVariables = [&](cm::string_view var) {
+    std::vector<std::string> vv = { "PROJECT_", cmStrCat(projectName, "_") };
+    if (mf.IsRootMakefile()) {
+      vv.push_back("CMAKE_PROJECT_");
+    }
+    for (std::string const& prefix : vv) {
+      std::string def = cmStrCat(prefix, var);
+      if (!mf.GetDefinition(def).IsEmpty()) {
+        mf.AddDefinition(def, "");
+      }
+    }
+  };
+
+  // TODO: We should treat VERSION the same as all other project variables, but
+  // setting it to empty string unconditionally causes various behavior
+  // changes. It needs a policy. For now, maintain the old behavior and add a
+  // policy in a future release.
+
+  if (has_version) {
+    createVariables("VERSION"_s, version_string);
+    createVariables("VERSION_MAJOR"_s, version_components[0]);
+    createVariables("VERSION_MINOR"_s, version_components[1]);
+    createVariables("VERSION_PATCH"_s, version_components[2]);
+    createVariables("VERSION_TWEAK"_s, version_components[3]);
+  } else {
+    checkAndClearVariables("VERSION"_s);
+    checkAndClearVariables("VERSION_MAJOR"_s);
+    checkAndClearVariables("VERSION_MINOR"_s);
+    checkAndClearVariables("VERSION_PATCH"_s);
+    checkAndClearVariables("VERSION_TWEAK"_s);
+  }
+
   createVariables("COMPAT_VERSION"_s, prArgs.CompatVersion.value_or(""));
+  createVariables("SPDX_LICENSE"_s, prArgs.License.value_or(""));
   createVariables("DESCRIPTION"_s, prArgs.Description.value_or(""));
   createVariables("HOMEPAGE_URL"_s, prArgs.HomepageURL.value_or(""));
 

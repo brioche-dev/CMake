@@ -6,9 +6,9 @@
 #include <utility>
 
 #include <cm/memory>
-#include <cm/string_view>
 
 #include "cmFileSet.h"
+#include "cmGenExContext.h"
 #include "cmGeneratorExpression.h"
 #include "cmGeneratorExpressionDAGChecker.h"
 #include "cmGeneratorTarget.h"
@@ -22,8 +22,6 @@
 #include "cmSystemTools.h"
 #include "cmTarget.h"
 #include "cmValue.h"
-
-class cmTargetExport;
 
 cmExportTryCompileFileGenerator::cmExportTryCompileFileGenerator(
   cmGlobalGenerator* gg, std::vector<std::string> const& targets,
@@ -76,6 +74,8 @@ std::string cmExportTryCompileFileGenerator::FindTargets(
     return std::string();
   }
 
+  cm::GenEx::Context context(tgt->LocalGenerator, this->Config, language);
+
   cmGeneratorExpression ge(*tgt->Makefile->GetCMakeInstance());
 
   std::unique_ptr<cmGeneratorExpressionDAGChecker> parentDagChecker;
@@ -83,16 +83,10 @@ std::string cmExportTryCompileFileGenerator::FindTargets(
     // To please constraint checks of DAGChecker, this property must have
     // LINK_OPTIONS property as parent
     parentDagChecker = cm::make_unique<cmGeneratorExpressionDAGChecker>(
-      tgt, "LINK_OPTIONS", nullptr, nullptr, tgt->GetLocalGenerator(),
-      this->Config);
+      tgt, "LINK_OPTIONS", nullptr, nullptr, context);
   }
   cmGeneratorExpressionDAGChecker dagChecker{
-    tgt,
-    propName,
-    nullptr,
-    parentDagChecker.get(),
-    tgt->GetLocalGenerator(),
-    this->Config,
+    tgt, propName, nullptr, parentDagChecker.get(), context,
   };
 
   std::unique_ptr<cmCompiledGeneratorExpression> cge = ge.Parse(*prop);
@@ -103,8 +97,7 @@ std::string cmExportTryCompileFileGenerator::FindTargets(
 
   cmGeneratorTarget gDummyHead(&dummyHead, tgt->GetLocalGenerator());
 
-  std::string result = cge->Evaluate(tgt->GetLocalGenerator(), this->Config,
-                                     &gDummyHead, &dagChecker, tgt, language);
+  std::string result = cge->Evaluate(context, &dagChecker, &gDummyHead, tgt);
 
   std::set<cmGeneratorTarget const*> const& allTargets =
     cge->GetAllTargetsSeen();
